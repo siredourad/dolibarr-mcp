@@ -434,19 +434,31 @@ async def handle_list_tools():
         ),
         Tool(
             name="create_product",
-            description="Create a new product",
+            description=(
+                "Create a new product or service in Dolibarr. "
+                "ref is required by Dolibarr (unique product reference code). "
+                "type must be 0 for a physical product or 1 for a service."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
+                    "ref": {"type": "string", "description": "Unique product reference (e.g. PROD-001)"},
                     "label": {"type": "string", "description": "Product name/label"},
-                    "price": {"type": "number", "description": "Product price"},
+                    "type": {
+                        "type": "integer",
+                        "description": "Product type: 0=Product, 1=Service",
+                        "default": 0,
+                    },
+                    "price": {"type": "number", "description": "Product price (HT)"},
+                    "price_ttc": {"type": "number", "description": "Product price (TTC)"},
+                    "tva_tx": {"type": "number", "description": "VAT rate (e.g. 20.0)", "default": 0},
                     "description": {"type": "string", "description": "Product description"},
                     "stock": {
                         "type": "integer",
                         "description": "Initial stock quantity",
                     },
                 },
-                "required": ["label", "price"],
+                "required": ["ref", "label", "type", "price"],
                 "additionalProperties": False,
             },
         ),
