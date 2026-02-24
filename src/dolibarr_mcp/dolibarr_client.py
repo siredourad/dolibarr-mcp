@@ -632,7 +632,23 @@ class DolibarrClient:
         product_id: int,
     ) -> List[Dict[str, Any]]:
         """Get supplier purchase prices for a product."""
-        result = await self.request("GET", f"products/purchase_prices", params={"product_id": product_id})
+        result = await self.request("GET", "products/purchase_prices", params={"product_id": product_id})
+        # API returns {product_id: [prices]} dict — extract the list for our product
+        if isinstance(result, dict):
+            prices = result.get(str(product_id), [])
+            # Return only useful fields
+            clean = []
+            for p in prices:
+                clean.append({
+                    "id": p.get("id"),
+                    "fourn_id": p.get("fourn_id"),
+                    "supplier_name": p.get("name"),
+                    "ref_fourn": p.get("ref_fourn") or p.get("ref_supplier"),
+                    "price": p.get("fourn_price") or p.get("price"),
+                    "qty": p.get("fourn_qty") or p.get("quantity"),
+                    "tva_tx": p.get("fourn_tva_tx") or p.get("tva_tx"),
+                })
+            return clean
         return result if isinstance(result, list) else []
 
     async def add_product_purchase_price(
