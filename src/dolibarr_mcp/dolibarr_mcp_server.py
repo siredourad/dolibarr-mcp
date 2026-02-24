@@ -334,6 +334,7 @@ async def handle_list_tools():
                         "description": "Customer ID to update",
                     },
                     "name": {"type": "string", "description": "Customer name"},
+                    "name_alias": {"type": "string", "description": "Alternative/commercial name"},
                     "email": {"type": "string", "description": "Email address"},
                     "phone": {"type": "string", "description": "Phone number"},
                     "address": {"type": "string", "description": "Customer address"},
@@ -345,6 +346,34 @@ async def handle_list_tools():
                     },
                 },
                 "required": ["customer_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="add_customer_category",
+            description=(
+                "Link a category/tag to a customer or supplier. "
+                "Use type='customer' for customer categories and type='supplier' for supplier categories."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "customer_id": {
+                        "type": "integer",
+                        "description": "Thirdparty ID",
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "description": "Category ID to link",
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "Category type: 'customer' or 'supplier'",
+                        "enum": ["customer", "supplier"],
+                        "default": "customer",
+                    },
+                },
+                "required": ["customer_id", "category_id"],
                 "additionalProperties": False,
             },
         ),
@@ -1271,6 +1300,28 @@ async def handle_list_tools():
             },
         ),
 
+        # Category Management
+        Tool(
+            name="get_categories",
+            description="Get list of categories/tags, filtered by type (customer, supplier, product, etc.).",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Category type: customer, supplier, product, contact, etc.",
+                        "default": "customer",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of categories to return (default: 100)",
+                        "default": 100,
+                    },
+                },
+                "additionalProperties": False,
+            },
+        ),
+
         # Raw API Access
         Tool(
             name="dolibarr_raw_api",
@@ -1401,6 +1452,13 @@ async def handle_call_tool(name: str, arguments: dict):
                 customer_id = arguments.pop('customer_id')
                 result = await client.update_customer(customer_id, **arguments)
             
+            elif name == "add_customer_category":
+                result = await client.add_customer_category(
+                    customer_id=arguments['customer_id'],
+                    category_id=arguments['category_id'],
+                    type=arguments.get('type', 'customer'),
+                )
+
             elif name == "delete_customer":
                 result = await client.delete_customer(arguments['customer_id'])
             
@@ -1562,6 +1620,13 @@ async def handle_call_tool(name: str, arguments: dict):
 
             elif name == "delete_project":
                 result = await client.delete_project(arguments["project_id"])
+
+            # Category Management
+            elif name == "get_categories":
+                result = await client.get_categories(
+                    type=arguments.get("type", "customer"),
+                    limit=arguments.get("limit", 100),
+                )
 
             # Raw API Access
             elif name == "dolibarr_raw_api":

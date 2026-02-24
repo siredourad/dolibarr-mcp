@@ -560,7 +560,19 @@ class DolibarrClient:
     async def delete_customer(self, customer_id: int) -> Dict[str, Any]:
         """Delete a customer."""
         return await self.request("DELETE", f"thirdparties/{customer_id}")
-    
+
+    async def add_customer_category(
+        self,
+        customer_id: int,
+        category_id: int,
+        type: str = "customer",
+    ) -> Dict[str, Any]:
+        """Link a category to a thirdparty (customer or supplier)."""
+        return await self.request(
+            "POST",
+            f"categories/{category_id}/objects/{type}/{customer_id}",
+        )
+
     # ============================================================================
     # PRODUCT MANAGEMENT
     # ============================================================================
@@ -921,6 +933,16 @@ class DolibarrClient:
     async def delete_project(self, project_id: int) -> Dict[str, Any]:
         """Delete a project."""
         return await self.request("DELETE", f"projects/{project_id}")
+
+    # ============================================================================
+    # CATEGORY MANAGEMENT
+    # ============================================================================
+
+    async def get_categories(self, type: str = "customer", limit: int = 100) -> List[Dict[str, Any]]:
+        """Get list of categories filtered by type."""
+        params: Dict[str, Any] = {"limit": limit, "type": type}
+        result = await self.request("GET", "categories", params=params)
+        return result if isinstance(result, list) else []
 
     # ============================================================================
     # RAW API CALL
