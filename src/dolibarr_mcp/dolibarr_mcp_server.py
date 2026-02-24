@@ -500,6 +500,63 @@ async def handle_list_tools():
             },
         ),
 
+        # Product Purchase Prices
+        Tool(
+            name="get_product_purchase_prices",
+            description="Get supplier purchase prices for a product. Returns all supplier prices configured for this product.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "integer",
+                        "description": "Product ID",
+                    }
+                },
+                "required": ["product_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="add_product_purchase_price",
+            description=(
+                "Add a supplier purchase price to a product. "
+                "Links a product to a supplier with a buy price. "
+                "Requires supplier_id (fourn_id) and price (buyprice HT). "
+                "qty defaults to 1, tva_tx defaults to 0, price_base_type defaults to HT."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "integer",
+                        "description": "Product ID",
+                    },
+                    "supplier_id": {
+                        "type": "integer",
+                        "description": "Supplier third-party ID (fourn_id)",
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "Purchase price HT (buyprice)",
+                    },
+                    "supplier_ref": {
+                        "type": "string",
+                        "description": "Supplier's product reference (ref_fourn)",
+                    },
+                    "qty": {
+                        "type": "number",
+                        "description": "Minimum quantity for this price (default: 1)",
+                    },
+                    "tva_tx": {
+                        "type": "number",
+                        "description": "VAT rate (default: 0)",
+                    },
+                },
+                "required": ["product_id", "supplier_id", "price"],
+                "additionalProperties": False,
+            },
+        ),
+
         # Invoice Management CRUD
         Tool(
             name="get_invoices",
@@ -1491,7 +1548,14 @@ async def handle_call_tool(name: str, arguments: dict):
             
             elif name == "delete_product":
                 result = await client.delete_product(arguments['product_id'])
-            
+
+            elif name == "get_product_purchase_prices":
+                result = await client.get_product_purchase_prices(arguments['product_id'])
+
+            elif name == "add_product_purchase_price":
+                product_id = arguments.pop('product_id')
+                result = await client.add_product_purchase_price(product_id, **arguments)
+
             # Invoice Management
             elif name == "get_invoices":
                 result = await client.get_invoices(

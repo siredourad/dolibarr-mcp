@@ -626,7 +626,38 @@ class DolibarrClient:
     async def delete_product(self, product_id: int) -> Dict[str, Any]:
         """Delete a product."""
         return await self.request("DELETE", f"products/{product_id}")
-    
+
+    async def get_product_purchase_prices(
+        self,
+        product_id: int,
+    ) -> List[Dict[str, Any]]:
+        """Get supplier purchase prices for a product."""
+        result = await self.request("GET", f"products/purchase_prices", params={"product_id": product_id})
+        return result if isinstance(result, list) else []
+
+    async def add_product_purchase_price(
+        self,
+        product_id: int,
+        data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Add a supplier purchase price to a product."""
+        payload = self._merge_payload(data, **kwargs)
+        # Map friendly names to Dolibarr API fields
+        if "supplier_id" in payload:
+            payload["fourn_id"] = payload.pop("supplier_id")
+        if "price" in payload:
+            payload["buyprice"] = payload.pop("price")
+        if "supplier_ref" in payload:
+            payload["ref_fourn"] = payload.pop("supplier_ref")
+        # Defaults
+        payload.setdefault("qty", 1)
+        payload.setdefault("price_base_type", "HT")
+        payload.setdefault("tva_tx", 0)
+        payload.setdefault("availability", 0)
+        result = await self.request("POST", f"products/{product_id}/purchase_prices", data=payload)
+        return self._extract_identifier(result)
+
     # ============================================================================
     # INVOICE MANAGEMENT
     # ============================================================================
