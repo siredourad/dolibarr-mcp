@@ -552,7 +552,7 @@ async def handle_list_tools():
                         "description": "VAT rate (default: 0)",
                     },
                 },
-                "required": ["product_id", "supplier_id", "price"],
+                "required": ["product_id", "supplier_id", "price", "supplier_ref"],
                 "additionalProperties": False,
             },
         ),
