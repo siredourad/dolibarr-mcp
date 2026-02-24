@@ -817,11 +817,12 @@ class DolibarrClient:
         payload = self._merge_payload(data, **kwargs)
         if "supplier_id" in payload:
             payload["socid"] = payload.pop("supplier_id")
-        # Map product_id → fk_product inside each line
+        # Map product_id → fk_product inside each line and default product_type
         if "lines" in payload and isinstance(payload["lines"], list):
             for line in payload["lines"]:
                 if "product_id" in line:
                     line["fk_product"] = line.pop("product_id")
+                line.setdefault("product_type", 0)
         result = await self.request("POST", "supplierorders", data=payload)
         return self._extract_identifier(result)
 

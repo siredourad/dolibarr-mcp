@@ -989,6 +989,11 @@ async def handle_list_tools():
                                     "type": "string",
                                     "description": "Supplier product reference",
                                 },
+                                "product_type": {
+                                    "type": "integer",
+                                    "description": "Type of line (0=Product, 1=Service). Defaults to 0.",
+                                    "default": 0,
+                                },
                             },
                             "required": ["qty", "subprice"],
                         },
