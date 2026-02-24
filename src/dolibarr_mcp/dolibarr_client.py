@@ -808,10 +808,20 @@ class DolibarrClient:
         data: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
-        """Create a new supplier/purchase order."""
+        """Create a new supplier/purchase order.
+
+        Lines must be included at creation time because the Dolibarr API
+        (as of v22) does not expose a dedicated POST endpoint for adding
+        lines to an existing supplier order.
+        """
         payload = self._merge_payload(data, **kwargs)
         if "supplier_id" in payload:
             payload["socid"] = payload.pop("supplier_id")
+        # Map product_id → fk_product inside each line
+        if "lines" in payload and isinstance(payload["lines"], list):
+            for line in payload["lines"]:
+                if "product_id" in line:
+                    line["fk_product"] = line.pop("product_id")
         result = await self.request("POST", "supplierorders", data=payload)
         return self._extract_identifier(result)
 
@@ -828,18 +838,6 @@ class DolibarrClient:
     async def delete_supplier_order(self, order_id: int) -> Dict[str, Any]:
         """Delete a supplier order."""
         return await self.request("DELETE", f"supplierorders/{order_id}")
-
-    async def add_supplier_order_line(
-        self,
-        order_id: int,
-        data: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ) -> Dict[str, Any]:
-        """Add a line to a supplier order."""
-        payload = self._merge_payload(data, **kwargs)
-        if "product_id" in payload:
-            payload["fk_product"] = payload.pop("product_id")
-        return await self.request("POST", f"supplierorders/{order_id}/lines", data=payload)
 
     # ============================================================================
     # CONTACT MANAGEMENT

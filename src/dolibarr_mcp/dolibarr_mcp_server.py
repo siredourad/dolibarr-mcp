@@ -943,7 +943,11 @@ async def handle_list_tools():
         ),
         Tool(
             name="create_supplier_order",
-            description="Create a new supplier/purchase order.",
+            description=(
+                "Create a new supplier/purchase order. Lines MUST be included at creation time "
+                "because the Dolibarr API (v22) does not support adding lines to an existing "
+                "supplier order via a separate endpoint."
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -954,6 +958,40 @@ async def handle_list_tools():
                     "date": {
                         "type": "string",
                         "description": "Order date (YYYY-MM-DD)",
+                    },
+                    "lines": {
+                        "type": "array",
+                        "description": "Order lines (must be provided at creation)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "desc": {
+                                    "type": "string",
+                                    "description": "Line description",
+                                },
+                                "product_id": {
+                                    "type": "integer",
+                                    "description": "Product ID (optional, mapped to fk_product)",
+                                },
+                                "qty": {
+                                    "type": "number",
+                                    "description": "Quantity",
+                                },
+                                "subprice": {
+                                    "type": "number",
+                                    "description": "Unit price (net)",
+                                },
+                                "tva_tx": {
+                                    "type": "number",
+                                    "description": "VAT rate (e.g. 20.0)",
+                                },
+                                "ref_supplier": {
+                                    "type": "string",
+                                    "description": "Supplier product reference",
+                                },
+                            },
+                            "required": ["qty", "subprice"],
+                        },
                     },
                 },
                 "required": ["supplier_id"],
@@ -994,46 +1032,6 @@ async def handle_list_tools():
                 "additionalProperties": False,
             },
         ),
-        Tool(
-            name="add_supplier_order_line",
-            description="Add a line item to an existing supplier order.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "order_id": {
-                        "type": "integer",
-                        "description": "Supplier order ID",
-                    },
-                    "product_id": {
-                        "type": "integer",
-                        "description": "Product ID (optional)",
-                    },
-                    "qty": {
-                        "type": "number",
-                        "description": "Quantity",
-                    },
-                    "subprice": {
-                        "type": "number",
-                        "description": "Unit price (net)",
-                    },
-                    "tva_tx": {
-                        "type": "number",
-                        "description": "VAT rate (e.g. 20.0)",
-                    },
-                    "desc": {
-                        "type": "string",
-                        "description": "Line description",
-                    },
-                    "ref_supplier": {
-                        "type": "string",
-                        "description": "Supplier product reference",
-                    },
-                },
-                "required": ["order_id", "qty", "subprice"],
-                "additionalProperties": False,
-            },
-        ),
-
         # Contact Management CRUD
         Tool(
             name="get_contacts",
@@ -1515,10 +1513,6 @@ async def handle_call_tool(name: str, arguments: dict):
 
             elif name == "delete_supplier_order":
                 result = await client.delete_supplier_order(arguments['order_id'])
-
-            elif name == "add_supplier_order_line":
-                order_id = arguments.pop("order_id")
-                result = await client.add_supplier_order_line(order_id, **arguments)
 
             # Contact Management
             elif name == "get_contacts":
