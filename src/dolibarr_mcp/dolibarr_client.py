@@ -533,6 +533,8 @@ class DolibarrClient:
         else:
             payload.setdefault("client", 1)
 
+        payload.setdefault("code_client", "-1")
+        payload.setdefault("code_fournisseur", "-1")
         payload.setdefault("status", payload.get("status", 1))
         payload.setdefault("country_id", payload.get("country_id", 1))
 
@@ -772,7 +774,73 @@ class DolibarrClient:
     async def delete_order(self, order_id: int) -> Dict[str, Any]:
         """Delete an order."""
         return await self.request("DELETE", f"orders/{order_id}")
-    
+
+    async def add_order_line(
+        self,
+        order_id: int,
+        data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Add a line to a customer order."""
+        payload = self._merge_payload(data, **kwargs)
+        if "product_id" in payload:
+            payload["fk_product"] = payload.pop("product_id")
+        return await self.request("POST", f"orders/{order_id}/lines", data=payload)
+
+    # ============================================================================
+    # SUPPLIER ORDER MANAGEMENT
+    # ============================================================================
+
+    async def get_supplier_orders(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get list of supplier/purchase orders."""
+        params: Dict[str, Any] = {"limit": limit}
+        if status:
+            params["status"] = status
+        result = await self.request("GET", "supplierorders", params=params)
+        return result if isinstance(result, list) else []
+
+    async def get_supplier_order_by_id(self, order_id: int) -> Dict[str, Any]:
+        """Get specific supplier order by ID."""
+        return await self.request("GET", f"supplierorders/{order_id}")
+
+    async def create_supplier_order(
+        self,
+        data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Create a new supplier/purchase order."""
+        payload = self._merge_payload(data, **kwargs)
+        if "supplier_id" in payload:
+            payload["socid"] = payload.pop("supplier_id")
+        result = await self.request("POST", "supplierorders", data=payload)
+        return self._extract_identifier(result)
+
+    async def update_supplier_order(
+        self,
+        order_id: int,
+        data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Update an existing supplier order."""
+        payload = self._merge_payload(data, **kwargs)
+        return await self.request("PUT", f"supplierorders/{order_id}", data=payload)
+
+    async def delete_supplier_order(self, order_id: int) -> Dict[str, Any]:
+        """Delete a supplier order."""
+        return await self.request("DELETE", f"supplierorders/{order_id}")
+
+    async def add_supplier_order_line(
+        self,
+        order_id: int,
+        data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Add a line to a supplier order."""
+        payload = self._merge_payload(data, **kwargs)
+        if "product_id" in payload:
+            payload["fk_product"] = payload.pop("product_id")
+        return await self.request("POST", f"supplierorders/{order_id}/lines", data=payload)
+
     # ============================================================================
     # CONTACT MANAGEMENT
     # ============================================================================

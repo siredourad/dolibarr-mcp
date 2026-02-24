@@ -866,6 +866,173 @@ async def handle_list_tools():
                 "additionalProperties": False,
             },
         ),
+        Tool(
+            name="add_order_line",
+            description="Add a line item to an existing customer order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "Order ID",
+                    },
+                    "product_id": {
+                        "type": "integer",
+                        "description": "Product ID (optional)",
+                    },
+                    "qty": {
+                        "type": "number",
+                        "description": "Quantity",
+                    },
+                    "subprice": {
+                        "type": "number",
+                        "description": "Unit price (net)",
+                    },
+                    "tva_tx": {
+                        "type": "number",
+                        "description": "VAT rate (e.g. 20.0)",
+                    },
+                    "desc": {
+                        "type": "string",
+                        "description": "Line description",
+                    },
+                },
+                "required": ["order_id", "qty", "subprice"],
+                "additionalProperties": False,
+            },
+        ),
+
+        # Supplier Order Management CRUD
+        Tool(
+            name="get_supplier_orders",
+            description=(
+                "Get a paginated list of supplier/purchase orders from Dolibarr, optionally filtered by status."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of orders to return (default: 100)",
+                        "default": 100,
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Order status filter",
+                    },
+                },
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="get_supplier_order_by_id",
+            description=(
+                "Get the details of exactly one supplier order by numeric ID."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "Supplier order ID",
+                    }
+                },
+                "required": ["order_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="create_supplier_order",
+            description="Create a new supplier/purchase order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "supplier_id": {
+                        "type": "integer",
+                        "description": "Supplier ID (socid of the third party)",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Order date (YYYY-MM-DD)",
+                    },
+                },
+                "required": ["supplier_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="update_supplier_order",
+            description="Update an existing supplier order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "Supplier order ID to update",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "Order date (YYYY-MM-DD)",
+                    },
+                },
+                "required": ["order_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="delete_supplier_order",
+            description="Delete a supplier order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "Supplier order ID to delete",
+                    }
+                },
+                "required": ["order_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="add_supplier_order_line",
+            description="Add a line item to an existing supplier order.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "Supplier order ID",
+                    },
+                    "product_id": {
+                        "type": "integer",
+                        "description": "Product ID (optional)",
+                    },
+                    "qty": {
+                        "type": "number",
+                        "description": "Quantity",
+                    },
+                    "subprice": {
+                        "type": "number",
+                        "description": "Unit price (net)",
+                    },
+                    "tva_tx": {
+                        "type": "number",
+                        "description": "VAT rate (e.g. 20.0)",
+                    },
+                    "desc": {
+                        "type": "string",
+                        "description": "Line description",
+                    },
+                    "ref_supplier": {
+                        "type": "string",
+                        "description": "Supplier product reference",
+                    },
+                },
+                "required": ["order_id", "qty", "subprice"],
+                "additionalProperties": False,
+            },
+        ),
 
         # Contact Management CRUD
         Tool(
@@ -1324,7 +1491,35 @@ async def handle_call_tool(name: str, arguments: dict):
             
             elif name == "delete_order":
                 result = await client.delete_order(arguments['order_id'])
-            
+
+            elif name == "add_order_line":
+                order_id = arguments.pop("order_id")
+                result = await client.add_order_line(order_id, **arguments)
+
+            # Supplier Order Management
+            elif name == "get_supplier_orders":
+                result = await client.get_supplier_orders(
+                    limit=arguments.get('limit', 100),
+                    status=arguments.get('status')
+                )
+
+            elif name == "get_supplier_order_by_id":
+                result = await client.get_supplier_order_by_id(arguments['order_id'])
+
+            elif name == "create_supplier_order":
+                result = await client.create_supplier_order(**arguments)
+
+            elif name == "update_supplier_order":
+                order_id = arguments.pop('order_id')
+                result = await client.update_supplier_order(order_id, **arguments)
+
+            elif name == "delete_supplier_order":
+                result = await client.delete_supplier_order(arguments['order_id'])
+
+            elif name == "add_supplier_order_line":
+                order_id = arguments.pop("order_id")
+                result = await client.add_supplier_order_line(order_id, **arguments)
+
             # Contact Management
             elif name == "get_contacts":
                 result = await client.get_contacts(limit=arguments.get('limit', 100))
