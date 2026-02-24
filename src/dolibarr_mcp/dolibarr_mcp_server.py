@@ -352,15 +352,16 @@ async def handle_list_tools():
         Tool(
             name="add_customer_category",
             description=(
-                "Link a category/tag to a customer or supplier. "
-                "Use type='customer' for customer categories and type='supplier' for supplier categories."
+                "Link a category/tag to a customer, supplier, or product. "
+                "Use type='customer' for customers, type='supplier' for suppliers, "
+                "type='product' for products."
             ),
             inputSchema={
                 "type": "object",
                 "properties": {
                     "customer_id": {
                         "type": "integer",
-                        "description": "Thirdparty ID",
+                        "description": "Object ID (thirdparty ID or product ID)",
                     },
                     "category_id": {
                         "type": "integer",
@@ -368,8 +369,8 @@ async def handle_list_tools():
                     },
                     "type": {
                         "type": "string",
-                        "description": "Category type: 'customer' or 'supplier'",
-                        "enum": ["customer", "supplier"],
+                        "description": "Category type: 'customer', 'supplier', or 'product'",
+                        "enum": ["customer", "supplier", "product"],
                         "default": "customer",
                     },
                 },
